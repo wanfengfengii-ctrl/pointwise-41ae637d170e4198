@@ -3,6 +3,7 @@ from dataclasses import asdict
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import calibration_examples
 from intake.receive import receive_packet
 from intake.store import ReceiptStore
 from issue.register import IssueRegister, issue_packet
@@ -91,6 +92,10 @@ def main():
             'code_paths': ['intake/checks.py', 'review/align.py', 'review/constraints.py', 'review/provenance.py'],
             'oracle': 'A value cannot simultaneously be at most 1 + 1 and strictly greater than 2.',
         }, sort_keys=True))
+
+        # Close-source calibrated (V2) review on one pair of receipts:
+        # rejection, signing and reopening the stored report.
+        calibration_examples.run('handoff', show=True)
 
 
 if __name__ == '__main__':

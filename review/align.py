@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from calibration import parse_k
 from intake.selection import select_pair
 from review.bounds import Bound, to_difference_range
 from review.constraints import ConstraintEdge, close_constraints
@@ -37,15 +38,50 @@ def build_joint_edges(pair):
     return tuple(edges)
 
 
-def review_pair(receipts, reports, first_id, second_id, x, y):
-    pair = select_pair(receipts, first_id, second_id, x, y)
+def build_calibrated_edges(pair, k):
+    edges = []
+    for material in pair.materials:
+        projection = material.packet.projection
+        for number, relation in enumerate(projection.relations, start=1):
+            left = ('shared', pair.batch, relation.left)
+            right = ('shared', pair.batch, relation.right)
+            bound = Bound(relation.bound.a + relation.bound.b * k, not relation.bound.closed)
+            edges.append(ConstraintEdge(left, right, bound, material.receipt_id, number, 'upper'))
+        zero = ('shared', pair.batch, pair.x)
+        for number, condition in enumerate(projection.conditions, start=1):
+            bound = Bound(condition.bound.a + condition.bound.b * k, not condition.bound.closed)
+            edges.append(ConstraintEdge(zero, zero, bound, material.receipt_id, number, 'condition'))
+    return tuple(edges)
+
+
+def _review(pair, reports, edges, calibration_id=None, k=None):
     start = ('shared', pair.batch, pair.x)
     end = ('shared', pair.batch, pair.y)
-    closure = close_constraints((start, end), build_joint_edges(pair))
+    closure = close_constraints((start, end), edges)
     origins = build_report_origins(pair)
     if closure.conflict:
         return Conflict(pair.batch, pair.x, pair.y, origins, trace_conflict(pair, closure))
     interval = to_difference_range(closure.bound(start, end), closure.bound(end, start))
     return reports.commit(batch=pair.batch, x=pair.x, y=pair.y, interval=interval, origins=origins,
                           lower_witness=trace_edges(pair, closure.witness(end, start)),
-                          upper_witness=trace_edges(pair, closure.witness(start, end)))
+                          upper_witness=trace_edges(pair, closure.witness(start, end)),
+                          calibration_id=calibration_id, k=k)
+
+
+def review_pair(receipts, reports, first_id, second_id, x, y, k=None):
+    pair = select_pair(receipts, first_id, second_id, x, y)
+    versions = {material.packet.version for material in pair.materials}
+    if k is None:
+        if versions != {1}:
+            raise ValueError('calibrated packets require an explicit calibration value k')
+        return _review(pair, reports, build_joint_edges(pair))
+    k = parse_k(k)
+    if versions != {2}:
+        raise ValueError('a calibration value k requires two calibrated (version 2) packets')
+    specs = {material.packet.calibration for material in pair.materials}
+    if len(specs) != 1:
+        raise ValueError('packets declare different calibration ids or intervals')
+    spec = next(iter(specs))
+    if not spec.lower <= k <= spec.upper:
+        raise ValueError('calibration value k lies outside the fixed interval')
+    return _review(pair, reports, build_calibrated_edges(pair, k), spec.calibration_id, k)

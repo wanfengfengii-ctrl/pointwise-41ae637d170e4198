@@ -19,11 +19,18 @@ class Endpoint:
 
 
 @dataclass(frozen=True)
+class AffineEndpoint:
+    a: int
+    b: int
+    closed: bool
+
+
+@dataclass(frozen=True)
 class DifferenceConstraint:
     left: str
     right: str
-    lower: Endpoint | None
-    upper: Endpoint | None
+    lower: Endpoint | AffineEndpoint | None
+    upper: Endpoint | AffineEndpoint | None
     evidence: str
 
 
@@ -34,6 +41,17 @@ def normalize_endpoint(value, unit):
     if type(value['closed']) is not bool:
         raise ValueError('endpoint closed flag must be a boolean')
     return Endpoint(to_ticks(value['value'], unit), value['closed'])
+
+
+def normalize_affine_endpoint(value):
+    if value is None:
+        return None
+    fields(value, 'a b closed', 'affine endpoint')
+    if type(value['a']) is not int or type(value['b']) is not int:
+        raise ValueError('affine endpoint coefficients must be integers')
+    if type(value['closed']) is not bool:
+        raise ValueError('endpoint closed flag must be a boolean')
+    return AffineEndpoint(value['a'], value['b'], value['closed'])
 
 
 def normalize_rows(rows, unit):
@@ -49,14 +67,19 @@ def normalize_rows(rows, unit):
     return tuple(result)
 
 
-def normalize_constraints(constraints, unit):
+def normalize_constraints(constraints, unit, affine=False):
     result = []
     for relation in array(constraints, 'constraints'):
         fields(relation, 'from to lower upper evidence', 'difference constraint')
+        if affine:
+            lower = normalize_affine_endpoint(relation['lower'])
+            upper = normalize_affine_endpoint(relation['upper'])
+        else:
+            lower = normalize_endpoint(relation['lower'], unit)
+            upper = normalize_endpoint(relation['upper'], unit)
         result.append(DifferenceConstraint(
             label(relation['from'], 'from marker'), label(relation['to'], 'to marker'),
-            normalize_endpoint(relation['lower'], unit),
-            normalize_endpoint(relation['upper'], unit),
+            lower, upper,
             label(relation['evidence'], 'evidence row'),
         ))
     return tuple(result)

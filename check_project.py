@@ -2,6 +2,8 @@
 import sys
 import unittest
 
+import calibration_examples
+
 
 def main():
     suite = unittest.defaultTestLoader.discover('tests', top_level_dir='.')
@@ -23,6 +25,10 @@ def main():
           f'expected_failures={len(result.expectedFailures)} '
           f'unexpected_successes={len(result.unexpectedSuccesses)} '
           f'result={"PASS" if successful else "FAIL"}')
+    if successful:
+        for case in calibration_examples.CASES:
+            calibration_examples.run(case)
+        print('Calibration handoff, crossing and local conflict verified.')
     return 0 if successful else 1
 
 

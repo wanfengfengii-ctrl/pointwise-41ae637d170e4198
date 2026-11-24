@@ -3,7 +3,8 @@ from uuid import uuid4
 
 from archive import SqliteArchive, canonical_bytes, decode_json, label
 from issue.origins import issue_origin_tickets
-from issue.package import Packet, encode_packet_body, seal_packet
+from issue.package import Packet, encode_calibrated_body, encode_packet_body, seal_packet
+from issue.projection import project_revision
 from issue.qualification import qualify_revision
 from issue.relations import build_packet_relations
 from recording.evidence import SourceLocator
@@ -55,7 +56,12 @@ class IssueRegister(SqliteArchive):
 def issue_packet(revisions, issues, batch, station, revision_id):
     qualified = qualify_revision(revisions, batch, station, revision_id)
     tickets = issue_origin_tickets(qualified)
-    relations = build_packet_relations(qualified, tickets)
-    packet = seal_packet(uuid4().hex, encode_packet_body(qualified, relations, tickets))
+    if qualified.revision.calibration is None:
+        relations = build_packet_relations(qualified, tickets)
+        packet = seal_packet(uuid4().hex, encode_packet_body(qualified, relations, tickets))
+    else:
+        projection = project_revision(qualified, tickets)
+        packet = seal_packet(uuid4().hex,
+                             encode_calibrated_body(qualified, projection, tickets), version=2)
     issues.record(packet, tickets)
     return packet
