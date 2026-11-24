@@ -1,0 +1,11 @@
+{
+  "batch": "HC-17",
+  "stations": ["east", "west"],
+  "anchors": [{"name": "X", "meaning": "trigger"}, {"name": "Y", "meaning": "peak"}],
+  "bindings": [
+    {"station": "east", "marker": "cam-start", "anchor": "X"},
+    {"station": "east", "marker": "cam-peak", "anchor": "Y"},
+    {"station": "west", "marker": "pulse", "anchor": "X"},
+    {"station": "west", "marker": "crest", "anchor": "Y"}
+  ]
+}

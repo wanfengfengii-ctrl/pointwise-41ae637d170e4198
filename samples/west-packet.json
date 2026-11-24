@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "issue_id": "sample-west-strict",
+  "body": {
+    "batch": "HC-17", "station": "west", "revision": 7,
+    "members": ["east", "west"],
+    "anchors": [{"name": "X", "meaning": "trigger"}, {"name": "Y", "meaning": "peak"}],
+    "auxiliary": [], "tickets": ["w1"],
+    "relations": [
+      {"left": ["shared", "X"], "right": ["shared", "Y"], "lower": {"value": 2, "closed": false}, "upper": null, "tickets": ["w1"]}
+    ]
+  },
+  "sha256": "dcfab004967f796af27778ae303fdb97344cac3f4fe90756d793ba0f3f31e221"
+}

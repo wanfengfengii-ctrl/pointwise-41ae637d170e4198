@@ -1,0 +1,13 @@
+{
+  "unit": "ns",
+  "rows": [
+    {"id": "e1", "marker": "cam-start", "reading": 10, "position": "trace-A:1"},
+    {"id": "x-read", "marker": "cam-start", "reading": 11, "position": "trace-A:2"},
+    {"id": "e2", "marker": "U", "reading": 12, "position": "trace-A:3"},
+    {"id": "e3", "marker": "cam-peak", "reading": 13, "position": "trace-A:4"}
+  ],
+  "constraints": [
+    {"from": "cam-start", "to": "U", "lower": null, "upper": {"value": 1, "closed": true}, "evidence": "e1"},
+    {"from": "U", "to": "cam-peak", "lower": null, "upper": {"value": 1, "closed": true}, "evidence": "e2"}
+  ]
+}

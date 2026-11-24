@@ -1,0 +1,10 @@
+{
+  "unit": "ns",
+  "rows": [
+    {"id": "w1", "marker": "pulse", "reading": 20, "position": "scope-B:11"},
+    {"id": "w2", "marker": "crest", "reading": 22, "position": "scope-B:12"}
+  ],
+  "constraints": [
+    {"from": "pulse", "to": "crest", "lower": {"value": 2, "closed": true}, "upper": null, "evidence": "w1"}
+  ]
+}
